@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATS Informatika Kelas 7 - SMP Dhammaśoka</title>
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              purple: '#6C5CE7',
+              pink: '#FD79A8',
+              yellow: '#FDCB6E',
+              blue: '#0984E3',
+              green: '#00B894',
+              dark: '#2D3436'
+            }
+          },
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            nunito: ['Nunito', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Nunito', sans-serif; user-select: none; }
+    h1, h2, h3, .btn-font { font-family: 'Fredoka', sans-serif; }
+    .bg-pattern {
+      background-color: #6C5CE7;
+      background-image: radial-gradient(#81ecec 2px, transparent 2px), radial-gradient(#fd79a8 2px, #6c5ce7 2px);
+      background-size: 80px 80px;
+      background-position: 0 0, 40px 40px;
+    }
+    @keyframes cardAlert {
+      0% { transform: scale(0.2) rotate(-20deg); opacity: 0; }
+      50% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .animate-card { animation: cardAlert 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+  </style>
+</head>
+<body class="bg-pattern min-h-screen text-slate-800 flex items-center justify-center p-2 sm:p-4">
+
+  <!-- OVERLAY KARTU PELANGGARAN -->
+  <div id="violationOverlay" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-4">
+    <div id="cardGraphic" class="w-64 h-96 rounded-2xl shadow-2xl flex flex-col items-center justify-between p-6 text-white text-center font-bold animate-card border-4 border-white">
+      <div class="text-3xl font-black uppercase tracking-widest" id="cardTitle">PERINGATAN!</div>
+      <i id="cardIcon" class="fa-solid text-7xl"></i>
+      <div id="cardMessage" class="text-lg">Terdeteksi meninggalkan area ujian!</div>
+    </div>
+  </div>
+
+  <!-- CONTAINER UTAMA -->
+  <div class="w-full max-w-4xl bg-white/95 backdrop-blur rounded-3xl shadow-2xl border-4 border-white overflow-hidden min-h-[600px] flex flex-col">
+    
+    <!-- HEADER APP -->
+    <header class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white p-4 shadow-md flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="bg-white p-2 rounded-2xl text-indigo-600 text-2xl shadow">
+          <i class="fa-solid fa-gamepad"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black tracking-wide">SMP DHAMMĀSOKA</h1>
+          <p class="text-xs sm:text-sm text-yellow-300 font-bold">ATS Informatika Kelas VII</p>
+        </div>
+      </div>
+      <!-- Timer -->
+      <div id="timerContainer" class="hidden bg-red-500/90 text-white px-4 py-2 rounded-2xl font-mono text-lg font-black flex items-center space-x-2 border-2 border-yellow-300 shadow">
+        <i class="fa-solid fa-clock animate-pulse"></i>
+        <span id="timer">90:00</span>
+      </div>
+    </header>
+
+    <!-- SCREEN 1: LOGIN & START -->
+    <div id="loginScreen" class="p-6 sm:p-10 flex-1 flex flex-col items-center justify-center text-center">
+      <div class="max-w-md w-full bg-slate-50 p-6 sm:p-8 rounded-2xl shadow-inner border-2 border-slate-200">
+        <div class="inline-block p-4 bg-yellow-400 rounded-full text-indigo-900 text-4xl mb-4 shadow">
+          <i class="fa-solid fa-user-astronaut"></i>
+        </div>
+        <h2 class="text-2xl font-extrabold text-indigo-900 mb-6">Registrasi Peserta</h2>
+        
+        <form id="loginForm" class="space-y-4 text-left">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Nama Lengkap Siswa</label>
+            <input type="text" id="inputNama" required class="w-full px-4 py-3 rounded-xl border-2 border-indigo-200 focus:border-indigo-500 focus:outline-none font-semibold transition" placeholder="Masukkan Nama Lengkap">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Kelas</label>
+            <select id="inputKelas" required class="w-full px-4 py-3 rounded-xl border-2 border-indigo-200 focus:border-indigo-500 focus:outline-none font-semibold transition bg-white">
+              <option value="">-- Pilih Kelas --</option>
+              <option value="VII A">VII A</option>
+              <option value="VII B">VII B</option>
+              <option value="VII C">VII C</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Passcode Ujian</label>
+            <input type="password" id="inputPasscode" required class="w-full px-4 py-3 rounded-xl border-2 border-indigo-200 focus:border-indigo-500 focus:outline-none font-semibold transition" placeholder="Ketik Passcode">
+          </div>
+          <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-0.5">
+            <i class="fa-solid fa-play mr-2"></i> MULAI ASESMEN
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: GAMEPLAY (SOAL) -->
+    <div id="gameScreen" class="hidden flex-1 flex flex-col p-4 sm:p-6 bg-slate-50">
+      <!-- Status & Navigasi Cepat -->
+      <div class="flex justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm border border-slate-200">
+        <span id="questionCounter" class="font-black text-indigo-700 text-base sm:text-lg">Soal 1 dari 45</span>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-bold text-slate-500">Kecurangan:</span>
+          <span id="violationCount" class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-lg text-xs font-bold">0/2</span>
+        </div>
+      </div>
+
+      <!-- Container Soal -->
+      <div class="flex-1 bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-y-auto max-h-[480px]">
+        <!-- Gambar Soal (Jika ada) -->
+        <div id="questionImgContainer" class="hidden mb-4 flex justify-center">
+          <img id="questionImg" src="" alt="Gambar Soal" class="max-h-56 rounded-xl border-2 border-slate-200 object-contain shadow-sm">
+        </div>
+        
+        <!-- Teks Soal -->
+        <h3 id="questionText" class="text-base sm:text-lg font-bold text-slate-800 mb-6 leading-relaxed">
+          Teks soal akan muncul di sini...
+        </h3>
+
+        <!-- Pilihan Jawaban -->
+        <div id="optionsContainer" class="space-y-3 mt-auto">
+          <!-- Options generated dynamically -->
+        </div>
+      </div>
+
+      <!-- Tombol Navigasi -->
+      <div class="flex justify-between items-center mt-4 gap-3">
+        <button id="btnPrev" onclick="navigateQuestion(-1)" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold px-5 py-3 rounded-xl transition flex items-center">
+          <i class="fa-solid fa-chevron-left mr-2"></i> Sebelumnya
+        </button>
+        <button id="btnNext" onclick="navigateQuestion(1)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl transition flex items-center shadow">
+          Selanjutnya <i class="fa-solid fa-chevron-right ml-2"></i>
+        </button>
+        <button id="btnSubmit" onclick="confirmSubmit()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition shadow flex items-center">
+          <i class="fa-solid fa-paper-plane mr-2"></i> Selesai
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: HASIL & SKOR -->
+    <div id="resultScreen" class="hidden p-6 sm:p-10 flex-1 flex flex-col items-center justify-center text-center">
+      <div class="max-w-lg w-full bg-white p-8 rounded-3xl shadow-xl border-4 border-indigo-100">
+        <div class="inline-block p-4 bg-emerald-100 text-emerald-600 rounded-full text-5xl mb-4">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <h2 class="text-3xl font-black text-indigo-900 mb-1">Asesmen Selesai!</h2>
+        <p class="text-slate-500 font-semibold mb-6">Terima kasih telah menyelesaikan ujian dengan jujur.</p>
+
+        <!-- Card Skor -->
+        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-2xl shadow-lg mb-6">
+          <span class="text-sm font-bold opacity-80 uppercase tracking-widest block mb-1">Skor Akhir Anda</span>
+          <span id="finalScore" class="text-6xl font-black tracking-tight">0</span>
+          <span class="text-xl font-bold">/ 100</span>
+        </div>
+
+        <!-- Rincian -->
+        <div class="grid grid-cols-3 gap-3 text-center mb-6">
+          <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+            <span class="block text-xs text-slate-500 font-bold">Benar</span>
+            <span id="totalBenar" class="text-xl font-black text-emerald-600">0</span>
+          </div>
+          <div class="bg-red-50 border border-red-200 p-3 rounded-xl">
+            <span class="block text-xs text-slate-500 font-bold">Salah</span>
+            <span id="totalSalah" class="text-xl font-black text-red-600">0</span>
+          </div>
+          <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-xl">
+            <span class="block text-xs text-slate-500 font-bold">Pelanggaran</span>
+            <span id="totalPelanggaran" class="text-xl font-black text-yellow-600">0</span>
+          </div>
+        </div>
+
+        <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl transition">
+          <i class="fa-solid fa-rotate-right mr-2"></i> Kembali ke Halaman Utama
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // KONFIGURASI UTAMA
+    // ==========================================
+    // 📌 ISISKAN URL GOOGLE APPS SCRIPT DI BAWAH INI:
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwLQiXBDWkTOJpD2cvDI0gl54BKhHiI20OauO0M9VlX_eLHSwMnKb8bpKR8uZDu_q0lpg/exec";
+    
+    // Passcode Game
+    const PASSCODE = "INFORMATIKA7";
+
+    // Data 45 Soal ATS Informatika Kelas 7
+    const questions = [
+      {
+        text: "Tindakan Ketua OSIS membagi tugas besar menjadi bagian-bagian yang lebih kecil merupakan penerapan dari pilar Berpikir Komputasional, yaitu...",
+        image: "", 
+        options: ["Abstraksi", "Dekomposisi", "Pengenalan Pola", "Algoritma"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Tim Acara menyusun urutan penampilan siswa mulai dari pembukaan oleh Kepala Sekolah, tari daerah, band siswa, hingga penutup. Langkah menyusun urutan kegiatan secara sistematis ini dinamakan...",
+        image: "",
+        options: ["Dekomposisi", "Abstraksi", "Algoritma", "Pengenalan Pola"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Pengenalan pola dalam kehidupan sehari-hari bertujuan untuk...",
+        image: "",
+        options: [
+          "Memperrumit penyelesaian masalah",
+          "Menemukan kesamaan atau kecenderungan untuk mempermudah solusi",
+          "Mengabaikan semua informasi penting",
+          "Menulis kode program komputer secara langsung"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Perhatikan empat pernyataan berikut:\n1. Membuat daftar belanjaan berdasarkan urutan lorong supermarket.\n2. Memisahkan pakaian berdasarkan warna sebelum mencuci.\n3. Menggambar peta lokasi sekolah tanpa menampilkan gambar rumput atau cat rumah warga.\n4. Mengikuti resep kue langkah demi langkah.\nPernyataan yang merupakan contoh Abstraksi adalah nomor...",
+        image: "",
+        options: ["1", "2", "3", "4"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Berdasarkan diagram pohon keputusan, jika kondisi awal menyatakan \"Cuaca Hujan\" dan \"Tugas Sekolah Banyak\", maka Rian diarahkan untuk mengambil keputusan tertentu. Metode pengambilan keputusan bercabang ini mirip dengan struktur data...",
+        image: "",
+        options: ["Stack (Tumpukan)", "Queue (Antrean)", "Tree / Decision Tree (Pohon Keputusan)", "Array (Larik)"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Rian menumpuk piring bekas makan di dapur. Piring yang terakhir ditaruh di atas tumpukan akan menjadi piring yang pertama kali dicuci. Konsep ini dinamakan...",
+        image: "",
+        options: ["Queue (Antrean)", "Stack (Tumpukan / LIFO)", "Graph (Graf)", "Searching (Pencarian)"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Pada konsep struktur data, perbedaan utama antara Stack dan Queue berada pada...",
+        image: "",
+        options: [
+          "Stack menggunakan urutan acak, Queue teratur",
+          "Stack menerapkan LIFO (terakhir masuk pertama keluar), Queue menerapkan FIFO (pertama masuk pertama keluar)",
+          "Stack hanya untuk angka, Queue untuk teks",
+          "Tidak ada perbedaan antara keduanya"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Objek karakter berupa kucing atau gambar lain yang bergerak dan menjalankan perintah pada Scratch dinamakan...",
+        image: "",
+        options: ["Stage", "Sprite", "Backdrop", "Variable"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Blok kode berwarna hijau dengan ikon bendera hijau (when green flag clicked) berfungsi sebagai...",
+        image: "",
+        options: [
+          "Menghentikan seluruh program",
+          "Pemicu (event) untuk memulai jalannya skrip/program",
+          "Mengubah warna latar belakang",
+          "Menghapus karakter Sprite"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Berdasarkan gambar blok kode Scratch di atas, perintah \"move 10 steps\" berfungsi untuk...",
+        image: "",
+        options: [
+          "Memutar karakter sebesar 10 derajat",
+          "Memindahkan/menggerakkan karakter sejauh 10 langkah ke depan",
+          "Memperbesar ukuran karakter 10 kali",
+          "Mengulangi skrip sebanyak 10 kali"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Untuk membuat karakter mengeluarkan suara atau percakapan balon teks \"Halo!\", kita menggunakan kelompok blok perintah...",
+        image: "",
+        options: ["Motion (Gerak)", "Looks (Tampilan) / Sound (Suara)", "Sensing (Sensori)", "Variables"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Tempat latar belakang visual tempat Sprite bergerak di Scratch disebut...",
+        image: "",
+        options: ["Sound Board", "Costumes", "Backdrop / Stage", "Palette"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Dalam pemrograman visual, wadah yang digunakan untuk menyimpan nilai data yang dapat berubah-ubah (seperti Skor Game atau Sisa Waktu) disebut...",
+        image: "",
+        options: ["Sprite", "Variabel", "Operator", "Extension"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Manakah di antara pilihan berikut yang merupakan keuntungan utama dari Pemrograman Visual berbasis Blok (seperti Scratch/Blockly) dibanding pemrograman berbasis Teks?",
+        image: "",
+        options: [
+          "Memerlukan pengetikan sintaks yang sangat rumit",
+          "Mengurangi risiko kesalahan pengetikan (syntax error) karena tinggal menyusun blok puzzle",
+          "Tidak bisa digunakan untuk membuat animasi",
+          "Hanya bisa berjalan di komputer super cepat"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Perintah \"hide\" dan \"show\" pada kategori Looks berfungsi untuk...",
+        image: "",
+        options: [
+          "Mengubah warna karakter",
+          "Menyembunyikan dan menampilkan kembali Sprite di panggung",
+          "Memperbesar dan memperkecil layar",
+          "Menghapus program secara permanen"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Konversikan bilangan biner 1011₂ ke dalam bentuk desimal!",
+        image: "",
+        options: ["9", "11", "13", "15"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Berapakah nilai desimal dari bilangan biner 11100₂?",
+        image: "",
+        options: ["24", "26", "28", "30"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Jika bilangan biner 101010₂ diubah menjadi bilangan desimal, hasilnya adalah...",
+        image: "",
+        options: ["42", "44", "50", "52"],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Bentuk biner dari bilangan desimal 25 adalah...",
+        image: "",
+        options: ["11001₂", "11010₂", "10011₂", "11101₂"],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Konversikan bilangan desimal 50 ke dalam bentuk biner!",
+        image: "",
+        options: ["110010₂", "110100₂", "101100₂", "111000₂"],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Nilai biner yang setara dengan bilangan desimal 77 adalah...",
+        image: "",
+        options: ["1001101₂", "1001011₂", "1010011₂", "1100101₂"],
+        optionImages: ["", "", "", ""],
+        answer: 3
+      },
+      {
+        text: "Sekumpulan fakta mentah berupa angka, teks, simbol, atau gambar yang belum diolah dan belum memiliki arti yang utuh dinamakan...",
+        image: "",
+        options: ["Informasi", "Data", "Algoritma", "Pengetahuan"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Data \"Andi\" pada pendaftaran klub di atas dikategorikan sebagai tipe data...",
+        image: "",
+        options: ["Numerik (Number)", "Teks (Text/String)", "Boolean", "Currency"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Data tinggi badan \"155.5\" dan usia \"13\" termasuk ke dalam jenis data...",
+        image: "",
+        options: ["Kualitatif", "Kuantitatif", "Boolean", "Alfanumerik"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Perbedaan utama antara data kualitatif dan data kuantitatif adalah...",
+        image: "",
+        options: [
+          "Data kualitatif berbentuk angka, sedangkan kuantitatif berbentuk kata-kata",
+          "Data kualitatif menggambarkan sifat/kualitas, sedangkan kuantitatif berupa nilai numerik yang dapat dihitung/diukur",
+          "Data kualitatif selalu disimpan dalam format tanggal",
+          "Data kuantitatif tidak bisa diolah menggunakan statistik"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Data \"Status Aktif = TRUE\" pada pendaftaran peserta hanya memiliki dua kemungkinan nilai (TRUE atau FALSE). Tipe data ini disebut...",
+        image: "",
+        options: ["Integer", "Boolean / Logika", "Float", "Character"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Data mentah \"12052013\" baru menjadi \"Informasi yang berguna\" bagi pembina klub jika...",
+        image: "",
+        options: [
+          "Diubah warnanya menjadi merah",
+          "Diberi label dan format yang jelas menjadi \"Tanggal Lahir: 12 Mei 2013\"",
+          "Dihapus angka nolnya",
+          "Diketik menggunakan huruf kapital"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Satuan kapasitas penyimpanan data terkecil dalam komputer yang bernilai 0 atau 1 dinamakan...",
+        image: "",
+        options: ["Byte", "Bit", "Kilobyte", "Megabyte"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Satu Byte terdiri dari kumpulan...",
+        image: "",
+        options: ["4 Bit", "8 Bit", "10 Bit", "1024 Bit"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Siswa mengunduh file tugas berbentuk spreadsheet berukuran 2 Megabyte (MB). Jika dikonversikan ke dalam Kilobyte (KB), ukuran file tersebut setara dengan...",
+        image: "",
+        options: ["200 KB", "1000 KB", "2048 KB", "20000 KB"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Keterangan seperti \"Sangat Puas\", \"Puas\", \"Cukup\", dan \"Kurang Puas\" pada survei kepuasan kantin sekolah merupakan contoh data...",
+        image: "",
+        options: ["Kuantitatif Diskrit", "Kuantitatif Kontinu", "Kualitatif Ordinal (Kategori Bertingkat)", "Boolean"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Perhatikan gambar simbol flowchart tabel referensi.\nApakah fungsi dari simbol bentuk Persegi Panjang?",
+        image: "https://uploads.onecompiler.io/4537kx6u3/1789460967649/PERSEGI%20PANJANG.jpg",
+        options: [
+          "Menandai awal atau akhir program",
+          "Menunjukkan proses atau pengolahan data",
+          "Mengambil keputusan atau kondisi",
+          "Menampilkan output ke layar"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Perhatikan gambar simbol flowchart jajar genjang.\nSimbol Jajar Genjang pada diagram alir digunakan untuk menunjukkan...",
+        image: "https://uploads.onecompiler.io/4537kx6u3/1789460979968/JAJAR%20GENJANG.jpg",
+        options: [
+          "Proses perhitungan aritmatika",
+          "Penghubung antar halaman",
+          "Operasi input (masukan) atau output (keluaran) data",
+          "Keputusan kondisi True atau False"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Perhatikan gambar simbol flowchart belah ketupat.\nSimbol Belah Ketupat (Decision) berfungsi untuk...",
+        image: "https://uploads.onecompiler.io/4537kx6u3/1789461024518/BELAH%20KETUPAT.jpg",
+        options: [
+          "Memulai jalannya algoritma",
+          "Menggambarkan proses eksekusi instruksi",
+          "Memilih jalur atau penyeleksian kondisi berdasarkan syarat tertentu",
+          "Menyimpan data sementara di memori"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Perhatikan gambar simbol flowchart oval.\nSimbol berbentuk Oval / Kapsul (Terminator) melambangkan...",
+        image: "https://uploads.onecompiler.io/4537kx6u3/1789461109508/OVAL.jpg",
+        options: [
+          "Awal (Start) atau akhir (End) dari sebuah program",
+          "Arah aliran data",
+          "Penghubung dalam satu halaman yang sama",
+          "Proses kalkulasi matematika"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Perhatikan gambar simbol flowchart garis panah.\nSimbol Garis Panah (Flow Line) dalam flowchart digunakan untuk...",
+        image: "https://uploads.onecompiler.io/4537kx6u3/1789461146794/PANAH.jpg",
+        options: [
+          "Menunjukkan urutan/arah aliran proses dari satu langkah ke langkah berikutnya",
+          "Menandai percabangan kondisi",
+          "Menghentikan program secara sementara",
+          "Menampilkan dokumen hasil cetakan"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Bima mengunduh tugas rangkuman Informatika berbentuk dokumen Word di HP miliknya. Keterangan pada file tersebut menunjukkan ukuran 3.072 KB. Jika dikonversikan ke dalam satuan Megabyte (MB), berapa ukuran berkas tersebut?",
+        image: "",
+        options: ["0,3 MB", "3 MB", "30 MB", "300 MB"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Di bawah ini adalah daftar berkas materi pelajaran yang disimpan di laptop milik laboratorium sekolah:\n1. Rekaman Video Pembelajaran = 1,8 GB\n2. Gambar Ilustrasi Tugas = 900 KB\n3. Audio Penjelasan Guru = 5,5 MB\n4. Teks Catatan Ringkas = 150 KB\nUrutan berkas dari yang berukuran paling kecil ke paling besar adalah...",
+        image: "",
+        options: ["4 – 2 – 3 – 1", "2 – 4 – 3 – 1", "1 – 3 – 2 – 4", "4 – 3 – 2 – 1"],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Rani memiliki flashdisk baru dengan kapasitas sisa penyimpanan 8 GB. Ia ingin menyimpan beberapa rekaman video latihan dance untuk persiapan Class Meeting. Jika 1 berkas video rata-rata berukuran 400 MB, berapa jumlah maksimal berkas video yang dapat disimpan Rani di dalam flashdisk tersebut? (Gunakan pendekatan desimal standar: 1 GB = 1.000 MB)",
+        image: "",
+        options: ["10 video", "15 video", "20 video", "25 video"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Satu unit komputer peladen (server) perpustakaan digital sekolah dilengkapi dengan media penyimpanan sekunder (harddisk) berkapasitas 4 Terabyte (TB). Kapasitas tersebut setara dengan ... Gigabyte (GB).",
+        image: "",
+        options: ["400 GB", "1.024 GB", "2.048 GB", "4.096 GB"],
+        optionImages: ["", "", "", ""],
+        answer: 3
+      },
+      {
+        text: "Dion memiliki sisa paket kuota internet bulanan sebesar 1,5 GB. Ia berniat mengunduh beberapa materi belajar kelompok berikut:\n- 2 berkas E-book Modul PDF masing-masing berukuran 200 MB\n- 1 berkas Video Tutorial berukuran 700 MB\n- 12 berkas Gambar Diagram masing-masing berukuran 50 MB\nApakah sisa kuota internet Dion mencukupi untuk mengunduh seluruh berkas tersebut? (Gunakan 1 GB = 1.000 MB)",
+        image: "",
+        options: [
+          "Cukup, bahkan masih tersisa kuota sebesar 200 MB.",
+          "Cukup, kuota tersisa tepat 0 MB (pas habis).",
+          "Tidak cukup, Dion kekurangan kuota sebesar 200 MB.",
+          "Tidak cukup, Dion kekurangan kuota sebesar 400 MB."
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Algoritma dibutuhkan untuk merencanakan langkah-langkah instruksi yang akan dijalankan oleh ....",
+        image: "",
+        options: ["program komputer", "staf programmer", "bahasa pemrograman", "perangkat komputer"],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Akses dari perkembangan teknologi informasi dan komunikasi, menjadi pintu untuk masuknya informasi dari semua negara di dunia adalah ....",
+        image: "",
+        options: ["mata pelajaran", "komputer", "informatika", "internet"],
+        optionImages: ["", "", "", ""],
+        answer: 3
+      },
+      {
+        text: "Pemanfaatan dan optimalisasi teknologi tidak terlepas dari sebuah proses mendasar yang harus dikuasai yaitu ....",
+        image: "",
+        options: ["teknologi informasi", "berpikir komputasional", "teknologi komunikasi", "teknologi komputer"],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Berpikir komputasional merupakan sebuah keterampilan dan praktik ilmu komputer yang sangat membantu dalam proses ....",
+        image: "",
+        options: ["pemrograman", "pembelajaran", "pemecahan masalah", "pemanfaatan komputer"],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Kamu diminta membuat tugas kelompok berupa presentasi tentang lingkungan sekolah. Agar tugas lebih mudah dikerjakan, cara yang tepat menggunakan konsep dekomposisi adalah ....",
+        image: "",
+        options: [
+          "Mengerjakan seluruh presentasi seorang diri",
+          "Membagi tugas menjadi beberapa bagian, seperti mencari informasi, membuat slide, mencari gambar, dan mempresentasikan",
+          "Membuat presentasi tanpa membagi tugas",
+          "Menunggu satu anggota menyelesaikan seluruh tugas"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 1
+      },
+      {
+        text: "Perhatikan urutan bilangan berikut: 2, 4, 8, 16, 32, ... Pola bilangan tersebut adalah setiap bilangan ....",
+        image: "",
+        options: [
+          "ditambah 2, sehingga dua bilangan berikutnya adalah 34 dan 36",
+          "dikurangi 2, sehingga dua bilangan berikutnya adalah 30 dan 28",
+          "dikalikan 2, sehingga dua bilangan berikutnya adalah 64 dan 128",
+          "dikalikan 3, sehingga dua bilangan berikutnya adalah 96 dan 288"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Saat mencari rute dari rumah ke sekolah menggunakan peta digital, informasi yang paling penting untuk diperhatikan adalah ....",
+        image: "",
+        options: [
+          "warna pakaian orang yang berada di jalan",
+          "jumlah rumah yang memiliki tanaman",
+          "nama jalan, arah perjalanan, jarak, kondisi lalu lintas, dan rute yang tersedia",
+          "bentuk dan warna semua bangunan yang dilewati"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      },
+      {
+        text: "Perhatikan langkah-langkah berikut!\n1. Memasukkan mi ke dalam air mendidih.\n2. Menyiapkan panci, air, mi, dan bumbu.\n3. Menambahkan bumbu ke dalam mangkuk.\n4. Merebus mi hingga matang.\n5. Menuangkan mi dan kuah ke dalam mangkuk.\nUrutan algoritma yang tepat untuk membuat mi instan adalah ....",
+        image: "",
+        options: [
+          "2 → 1 → 4 → 3 → 5",
+          "1 → 2 → 3 → 4 → 5",
+          "2 → 3 → 1 → 5 → 4",
+          "3 → 2 → 1 → 4 → 5"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 0
+      },
+      {
+        text: "Komputer di laboratorium sekolah sering digunakan banyak siswa sehingga file menjadi berantakan. Penerapan dekomposisi, pengenalan pola, abstraksi, dan algoritma yang tepat adalah ....",
+        image: "",
+        options: [
+          "Menghapus semua file agar komputer terlihat rapi",
+          "Membiarkan file tersimpan di mana saja agar tidak perlu mengatur",
+          "Mengelompokkan masalah, mencari pola penyimpanan file, memilih informasi penting, lalu membuat langkah pengelolaan file secara teratur",
+          "Memindahkan semua file ke satu folder tanpa melihat jenisnya"
+        ],
+        optionImages: ["", "", "", ""],
+        answer: 2
+      }
+    ];
+
+    // Status Game
+    let studentData = { nama: "", kelas: "" };
+    let currentQuestionIndex = 0;
+    let userAnswers = new Array(questions.length).fill(null);
+    let violations = 0;
+    let timerSeconds = 90 * 60; // 90 Menit
+    let timerInterval = null;
+    let gameActive = false;
+
+    // Element DOM
+    const loginForm = document.getElementById("loginForm");
+    const loginScreen = document.getElementById("loginScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const resultScreen = document.getElementById("resultScreen");
+    const timerContainer = document.getElementById("timerContainer");
+
+    // Submit Form Login
+    loginForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const pass = document.getElementById("inputPasscode").value;
+      if (pass !== PASSCODE) {
+        alert("Passcode yang Anda masukkan salah!");
+        return;
+      }
+      studentData.nama = document.getElementById("inputNama").value.trim();
+      studentData.kelas = document.getElementById("inputKelas").value;
+
+      loginScreen.classList.add("hidden");
+      gameScreen.classList.remove("hidden");
+      timerContainer.classList.remove("hidden");
+
+      gameActive = true;
+      startTimer();
+      loadQuestion();
+      setupSecurity();
+    });
+
+    // Timer
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        if (timerSeconds <= 0) {
+          clearInterval(timerInterval);
+          alert("Waktu ujian telah habis!");
+          finishGame();
+          return;
+        }
+        timerSeconds--;
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        document.getElementById("timer").innerText = 
+          `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // Load Soal
+    function loadQuestion() {
+      const q = questions[currentQuestionIndex];
+      document.getElementById("questionCounter").innerText = `Soal ${currentQuestionIndex + 1} dari ${questions.length}`;
+      document.getElementById("questionText").innerText = q.text;
+
+      // Img Soal
+      const imgContainer = document.getElementById("questionImgContainer");
+      const imgEl = document.getElementById("questionImg");
+      if (q.image && q.image.trim() !== "") {
+        imgEl.src = q.image;
+        imgContainer.classList.remove("hidden");
+      } else {
+        imgContainer.classList.add("hidden");
+      }
+
+      // Options
+      const optionsContainer = document.getElementById("optionsContainer");
+      optionsContainer.innerHTML = "";
+      const labels = ["A", "B", "C", "D"];
+
+      q.options.forEach((optText, idx) => {
+        const selected = userAnswers[currentQuestionIndex] === idx;
+        const optImg = q.optionImages && q.optionImages[idx] ? q.optionImages[idx] : "";
+        
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.onclick = () => selectOption(idx);
+        btn.className = `w-full text-left p-4 rounded-xl border-2 font-semibold flex items-center justify-between transition ${
+          selected 
+            ? "border-indigo-600 bg-indigo-50 text-indigo-900 shadow-sm" 
+            : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+        }`;
+
+        let imgHtml = optImg ? `<img src="${optImg}" class="max-h-16 rounded border ml-2">` : "";
+
+        btn.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+              selected ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"
+            }">${labels[idx]}</span>
+            <span>${optText}</span>
+          </div>
+          ${imgHtml}
+        `;
+        optionsContainer.appendChild(btn);
+      });
+
+      // Navigation Visibility
+      document.getElementById("btnPrev").style.visibility = currentQuestionIndex === 0 ? "hidden" : "visible";
+      if (currentQuestionIndex === questions.length - 1) {
+        document.getElementById("btnNext").classList.add("hidden");
+        document.getElementById("btnSubmit").classList.remove("hidden");
+      } else {
+        document.getElementById("btnNext").classList.remove("hidden");
+        document.getElementById("btnSubmit").classList.add("hidden");
+      }
+    }
+
+    function selectOption(index) {
+      userAnswers[currentQuestionIndex] = index;
+      loadQuestion();
+    }
+
+    function navigateQuestion(step) {
+      currentQuestionIndex += step;
+      loadQuestion();
+    }
+
+    function confirmSubmit() {
+      const unanswered = userAnswers.filter(a => a === null).length;
+      let msg = "Apakah Anda yakin ingin menyelesaikan ujian?";
+      if (unanswered > 0) {
+        msg = `Masih ada ${unanswered} soal yang belum dijawab. Yakin ingin mengumpulkan?`;
+      }
+      if (confirm(msg)) {
+        finishGame();
+      }
+    }
+
+    // Deteksi Kecurangan
+    function setupSecurity() {
+      // Prevent Right Click & Copy
+      document.addEventListener("contextmenu", e => e.preventDefault());
+      document.addEventListener("keydown", e => {
+        if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'u' || e.key === 'i')) {
+          e.preventDefault();
+        }
+      });
+
+      // Detect Tab switch / Blur
+      window.addEventListener("blur", handleViolation);
+    }
+
+    function handleViolation() {
+      if (!gameActive) return;
+      violations++;
+      document.getElementById("violationCount").innerText = `${violations}/2`;
+
+      const overlay = document.getElementById("violationOverlay");
+      const cardGraphic = document.getElementById("cardGraphic");
+      const cardTitle = document.getElementById("cardTitle");
+      const cardIcon = document.getElementById("cardIcon");
+      const cardMessage = document.getElementById("cardMessage");
+
+      overlay.classList.remove("hidden");
+
+      if (violations === 1) {
+        // Kartu Kuning
+        cardGraphic.className = "w-64 h-96 rounded-2xl shadow-2xl flex flex-col items-center justify-between p-6 text-white text-center font-bold animate-card border-4 border-white bg-amber-400";
+        cardTitle.innerText = "KARTU KUNING!";
+        cardIcon.className = "fa-solid fa-triangle-exclamation text-7xl";
+        cardMessage.innerText = "Peringatan 1: Anda terdeteksi meninggalkan halaman ujian!";
+        
+        setTimeout(() => {
+          overlay.classList.add("hidden");
+        }, 3000);
+      } else if (violations >= 2) {
+        // Kartu Merah & Reset
+        cardGraphic.className = "w-64 h-96 rounded-2xl shadow-2xl flex flex-col items-center justify-between p-6 text-white text-center font-bold animate-card border-4 border-white bg-red-600";
+        cardTitle.innerText = "KARTU MERAH!";
+        cardIcon.className = "fa-solid fa-ban text-7xl";
+        cardMessage.innerText = "Pelanggaran berulang! Anda didiskualifikasi dan harus mengulang dari awal.";
+
+        setTimeout(() => {
+          location.reload();
+        }, 4000);
+      }
+    }
+
+    // Hitung Skor & Kirim Data
+    function finishGame() {
+      gameActive = false;
+      clearInterval(timerInterval);
+
+      let benar = 0;
+      let salah = 0;
+      let soalSalah = [];
+
+      questions.forEach((q, idx) => {
+        if (userAnswers[idx] === q.answer) {
+          benar++;
+        } else {
+          salah++;
+          soalSalah.push(idx + 1);
+        }
+      });
+
+      const skorAkhir = Math.round((benar / questions.length) * 100);
+
+      // Display Screen Result
+      gameScreen.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
+      timerContainer.classList.add("hidden");
+
+      document.getElementById("finalScore").innerText = skorAkhir;
+      document.getElementById("totalBenar").innerText = benar;
+      document.getElementById("totalSalah").innerText = salah;
+      document.getElementById("totalPelanggaran").innerText = violations;
+
+      // Kirim Data Ke GAS
+      const payload = {
+        nama: studentData.nama,
+        kelas: studentData.kelas,
+        salah: salah,
+        benar: benar,
+        skor: skorAkhir,
+        pelanggaran: violations,
+        soalSalah: soalSalah
+      };
+
+      if (GAS_URL && GAS_URL !== "ISI_URL_GOOGLE_APPS_SCRIPT_DI_SINI") {
+        fetch(GAS_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }).catch(err => console.error("Error sending data: ", err));
+      }
+    }
+  </script>
+</body>
+</html>
